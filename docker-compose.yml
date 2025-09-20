@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: Au
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: restaurant
+    ports:
+      - '5432:5432'

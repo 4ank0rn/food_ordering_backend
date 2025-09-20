@@ -1,0 +1,92 @@
+// schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String?  // only for staff accounts; null for customers
+  createdAt DateTime @default(now())
+}
+
+model Table {
+  id          Int      @id @default(autoincrement())
+  tableNumber Int      @unique
+  status      String?
+  capacity    Int
+  qrCodeToken String   @unique // token encoded into QR which creates session
+  sessions    Session[]
+  orders      Order[]
+  bills       Bill[]
+}
+
+model Session {
+  id        String   @id @default(uuid()) // token returned to client device
+  table     Table    @relation(fields: [tableId], references: [id])
+  tableId   Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+  // optional meta (device name, user agent)
+  metaJson  Json?
+  orders    Order[]
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Float
+  foodtype    String?
+  description String?
+  isAvailable Boolean  @default(true)
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  table      Table       @relation(fields: [tableId], references: [id])
+  tableId    Int
+  session    Session?    @relation(fields: [sessionId], references: [id])
+  sessionId  String?
+  status     OrderStatus @default(PENDING) // PENDING / IN_PROGRESS / DONE / CANCELLED
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  queuePos   Int?        // optional cached queue position
+  orderItems OrderItem[]
+  bill       Bill?       @relation(fields: [billId], references: [id])
+  billId     Int?
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId Int
+  quantity   Int
+  note       String?
+}
+
+model Bill {
+  id          Int      @id @default(autoincrement())
+  table       Table    @relation(fields: [tableId], references: [id])
+  tableId     Int
+  totalAmount Float
+  isPaid      Boolean  @default(false)
+  paidAt      DateTime?
+  orders      Order[]
+  createdAt   DateTime @default(now())
+}

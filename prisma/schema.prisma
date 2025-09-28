@@ -1,7 +1,7 @@
 // schema.prisma
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://${env("POSTGRES_APP_USER")}:${env("POSTGRES_APP_PASSWORD")}@${env("POSTGRES_HOST")}:${env("POSTGRES_PORT")}/${env("POSTGRES_DB")}"
 }
 
 generator client {

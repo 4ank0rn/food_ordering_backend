@@ -6,22 +6,22 @@ export class TablesController {
   constructor(private svc: TablesService) {}
 
   @Post()
-  create(@Body() body: { tableNumber: number; capacity?: number }) {
-    return this.svc.create(body);
+  async create(@Body() body: { tableNumber: number; capacity?: number }) {
+    return await this.svc.create(body);
   }
 
   @Get()
-  list() {
-    return this.svc.findAll();
+  async list() {
+    return await this.svc.findAll();
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.findOne(Number(id));
+  async get(@Param('id') id: string) {
+    return await this.svc.findOne(Number(id));
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
-    return this.svc.updateStatus(Number(id), body.status);
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
+    return await this.svc.updateStatus(Number(id), body.status);
   }
 }

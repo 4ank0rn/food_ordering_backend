@@ -6,25 +6,25 @@ export class OrdersController {
   constructor(private svc: OrdersService) {}
 
   @Post()
-  create(@Body() body: any) {
-    return this.svc.create(body);
+  async create(@Body() body: any) {
+    return await this.svc.create(body);
   }
 
   @Get('queue')
-  getQueue() {
-    return this.svc.getQueue();
+  async getQueue() {
+    return await this.svc.getQueue();
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.getOne(Number(id));
+  async get(@Param('id') id: string) {
+    return await this.svc.getOne(Number(id));
   }
 
   @Patch(':id/status')
-  updateStatus(
+  async updateStatus(
     @Param('id') id: string,
     @Body() body: { status: 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED' },
   ) {
-    return this.svc.updateStatus(Number(id), body.status);
+    return await this.svc.updateStatus(Number(id), body.status);
   }
 }

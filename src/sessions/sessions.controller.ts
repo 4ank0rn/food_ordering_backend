@@ -6,12 +6,12 @@ export class SessionsController {
   constructor(private svc: SessionsService) {}
 
   @Post()
-  create(@Body() body: { qrCodeToken: string; meta?: any }) {
-    return this.svc.createFromQr(body.qrCodeToken, body.meta);
+  async create(@Body() body: { qrCodeToken: string; meta?: any }) {
+    return await this.svc.createFromQr(body.qrCodeToken, body.meta);
   }
 
   @Get(':id/orders')
-  getOrders(@Param('id') id: string) {
-    return this.svc.getOrders(id);
+  async getOrders(@Param('id') id: string) {
+    return await this.svc.getOrders(id);
   }
 }

@@ -8,19 +8,19 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Post('staff')
-  create(@Body() body: { name: string; email: string; password: string }) {
-    return this.svc.create(body);
+  async create(@Body() body: { name: string; email: string; password: string }) {
+    return await this.svc.create(body);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  list() {
-    return this.svc.findAll();
+  async list() {
+    return await this.svc.findAll();
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.findOne(Number(id));
+  async get(@Param('id') id: string) {
+    return await this.svc.findOne(Number(id));
   }
 }

@@ -21,5 +21,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "exclude": [
+    "seed.js",
+    "test-*.js",
+    "test-*.ts",
+    "node_modules",
+    "dist"
+  ]
 }

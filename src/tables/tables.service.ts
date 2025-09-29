@@ -31,4 +31,20 @@ export class TablesService {
   findByQr(qrCodeToken: string) {
     return this.prisma.table.findUnique({ where: { qrCodeToken } });
   }
+
+  async getQRCode(id: number) {
+    const table = await this.prisma.table.findUnique({ where: { id } });
+    if (!table) throw new NotFoundException('Table not found');
+
+    // Create QR code data that includes the frontend URL and table token
+    const qrData = {
+      tableId: table.id,
+      tableNumber: table.tableNumber,
+      qrCodeToken: table.qrCodeToken,
+      url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/scan/${table.qrCodeToken}`,
+      capacity: table.capacity
+    };
+
+    return qrData;
+  }
 }

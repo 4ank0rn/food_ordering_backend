@@ -15,27 +15,48 @@ export class MenuController {
   constructor(private svc: MenuService) {}
 
   @Get()
-  list(@Query('onlyAvailable') onlyAvailable?: string) {
-    return this.svc.list(onlyAvailable === 'true');
+  async list(
+    @Query('onlyAvailable') onlyAvailable?: string,
+    @Query('includeDeleted') includeDeleted?: string
+  ) {
+    return await this.svc.list(
+      onlyAvailable === 'true',
+      includeDeleted === 'true'
+    );
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.get(Number(id));
+  async get(@Param('id') id: string) {
+    return await this.svc.get(Number(id));
   }
 
   @Post()
-  create(@Body() body: any) {
-    return this.svc.create(body);
+  async create(@Body() body: any) {
+    return await this.svc.create(body);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: any) {
-    return this.svc.update(Number(id), body);
+  async update(@Param('id') id: string, @Body() body: any) {
+    return await this.svc.update(Number(id), body);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.svc.remove(Number(id));
+  async remove(@Param('id') id: string) {
+    return await this.svc.remove(Number(id));
+  }
+
+  @Delete(':id/hard')
+  async hardDelete(@Param('id') id: string) {
+    return await this.svc.hardDelete(Number(id));
+  }
+
+  @Patch(':id/restore')
+  async restore(@Param('id') id: string) {
+    return await this.svc.restore(Number(id));
+  }
+
+  @Get('deleted/list')
+  async getDeleted() {
+    return await this.svc.getDeleted();
   }
 }

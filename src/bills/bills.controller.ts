@@ -6,17 +6,17 @@ export class BillsController {
   constructor(private svc: BillsService) {}
 
   @Post()
-  create(@Body() body: { tableId: number }) {
-    return this.svc.createForTable(body.tableId);
+  async create(@Body() body: { tableId: number }) {
+    return await this.svc.createForTable(body.tableId);
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
-    return this.svc.get(Number(id));
+  async get(@Param('id') id: string) {
+    return await this.svc.get(Number(id));
   }
 
   @Patch(':id/pay')
-  pay(@Param('id') id: string) {
-    return this.svc.pay(Number(id));
+  async pay(@Param('id') id: string) {
+    return await this.svc.pay(Number(id));
   }
 }

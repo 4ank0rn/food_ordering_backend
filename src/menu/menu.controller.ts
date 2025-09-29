@@ -15,8 +15,14 @@ export class MenuController {
   constructor(private svc: MenuService) {}
 
   @Get()
-  async list(@Query('onlyAvailable') onlyAvailable?: string) {
-    return await this.svc.list(onlyAvailable === 'true');
+  async list(
+    @Query('onlyAvailable') onlyAvailable?: string,
+    @Query('includeDeleted') includeDeleted?: string
+  ) {
+    return await this.svc.list(
+      onlyAvailable === 'true',
+      includeDeleted === 'true'
+    );
   }
 
   @Get(':id')
@@ -37,5 +43,20 @@ export class MenuController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return await this.svc.remove(Number(id));
+  }
+
+  @Delete(':id/hard')
+  async hardDelete(@Param('id') id: string) {
+    return await this.svc.hardDelete(Number(id));
+  }
+
+  @Patch(':id/restore')
+  async restore(@Param('id') id: string) {
+    return await this.svc.restore(Number(id));
+  }
+
+  @Get('deleted/list')
+  async getDeleted() {
+    return await this.svc.getDeleted();
   }
 }

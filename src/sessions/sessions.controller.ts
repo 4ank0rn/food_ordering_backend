@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Delete, Patch, Query } from '@nestjs/common';
 import { SessionsService } from './sessions.service';
 
 @Controller('sessions')
@@ -14,4 +14,10 @@ export class SessionsController {
   async getOrders(@Param('id') id: string) {
     return await this.svc.getOrders(id);
   }
+
+  @Delete(':id')
+  async softDelete(@Param('id') id: string) {
+    return await this.svc.softDelete(id);
+  }
+
 }

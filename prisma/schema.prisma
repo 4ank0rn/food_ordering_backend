@@ -33,6 +33,7 @@ model Session {
   tableId   Int
   createdAt DateTime @default(now())
   expiresAt DateTime?
+  deletedAt DateTime? // soft delete field
   // optional meta (device name, user agent)
   metaJson  Json?
   orders    Order[]
@@ -45,6 +46,7 @@ model MenuItem {
   foodtype    String?
   description String?
   isAvailable Boolean  @default(true)
+  deletedAt   DateTime? // soft delete field
   orderItems  OrderItem[]
 }
 

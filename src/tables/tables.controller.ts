@@ -24,4 +24,9 @@ export class TablesController {
   async updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return await this.svc.updateStatus(Number(id), body.status);
   }
+
+  @Get(':id/qr')
+  async getQRCode(@Param('id') id: string) {
+    return await this.svc.getQRCode(Number(id));
+  }
 }

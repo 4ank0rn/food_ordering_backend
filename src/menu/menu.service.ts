@@ -5,13 +5,28 @@ import { PrismaService } from '../prisma/prisma.service';
 export class MenuService {
   constructor(private prisma: PrismaService) {}
 
-  list(onlyAvailable = false) {
-    const where = onlyAvailable ? { isAvailable: true } : undefined;
+  list(onlyAvailable = false, includeDeleted = false) {
+    const where: any = {};
+
+    if (onlyAvailable) {
+      where.isAvailable = true;
+    }
+
+    if (!includeDeleted) {
+      where.deletedAt = null;
+    }
+
     return this.prisma.menuItem.findMany({ where, orderBy: { name: 'asc' } });
   }
 
-  get(id: number) {
-    return this.prisma.menuItem.findUnique({ where: { id } });
+  get(id: number, includeDeleted = false) {
+    const where: any = { id };
+
+    if (!includeDeleted) {
+      where.deletedAt = null;
+    }
+
+    return this.prisma.menuItem.findFirst({ where });
   }
 
   create(data: {
@@ -35,7 +50,32 @@ export class MenuService {
     return this.prisma.menuItem.update({ where: { id }, data });
   }
 
+  // Soft delete
   remove(id: number) {
+    return this.prisma.menuItem.update({
+      where: { id },
+      data: { deletedAt: new Date() }
+    });
+  }
+
+  // Hard delete (permanent)
+  hardDelete(id: number) {
     return this.prisma.menuItem.delete({ where: { id } });
+  }
+
+  // Restore soft deleted item
+  restore(id: number) {
+    return this.prisma.menuItem.update({
+      where: { id },
+      data: { deletedAt: null }
+    });
+  }
+
+  // Get only deleted items
+  getDeleted() {
+    return this.prisma.menuItem.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' }
+    });
   }
 }

@@ -16,6 +16,7 @@ async function main() {
       create: {
         tableNumber: i,
         capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
+        status: 'AVAILABLE',
         qrCodeToken: `table-${i}-token-${Math.random().toString(36).slice(2, 15)}`,
       },
     });
@@ -58,61 +59,55 @@ async function main() {
       name: 'Pad Thai',
       price: 12.99,
       description: 'Traditional Thai stir-fried noodles with shrimp or chicken',
-      foodtype: 'Main Course',
+      foodtype: 'NOODLE',
     },
     {
       name: 'Tom Yum Soup',
       price: 8.99,
       description: 'Spicy and sour Thai soup with mushrooms and herbs',
-      foodtype: 'Soup',
+      foodtype: 'RICE',
     },
     {
       name: 'Green Curry',
       price: 14.99,
       description: 'Thai green curry with coconut milk and vegetables',
-      foodtype: 'Main Course',
+      foodtype: 'RICE',
     },
     {
       name: 'Som Tam',
       price: 7.99,
       description: 'Spicy green papaya salad',
-      foodtype: 'Salad',
+      foodtype: 'NOODLE',
     },
     {
       name: 'Mango Sticky Rice',
       price: 6.99,
       description: 'Sweet coconut sticky rice with fresh mango',
-      foodtype: 'Dessert',
+      foodtype: 'DESSERT',
     },
     {
       name: 'Thai Iced Tea',
       price: 3.99,
       description: 'Traditional Thai iced tea with condensed milk',
-      foodtype: 'Beverage',
+      foodtype: 'DRINK',
     },
     {
       name: 'Massaman Curry',
       price: 15.99,
       description: 'Rich and mild Thai curry with potatoes and peanuts',
-      foodtype: 'Main Course',
-    },
-    {
-      name: 'Spring Rolls',
-      price: 5.99,
-      description: 'Fresh vegetable spring rolls with peanut sauce',
-      foodtype: 'Appetizer',
+      foodtype: 'RICE',
     },
     {
       name: 'Thai Basil Stir Fry',
       price: 11.99,
       description: 'Spicy stir fry with Thai basil and choice of protein',
-      foodtype: 'Main Course',
+      foodtype: 'RICE',
     },
     {
       name: 'Coconut Soup',
       price: 9.99,
       description: 'Creamy coconut soup with galangal and lime leaves',
-      foodtype: 'Soup',
+      foodtype: 'RICE',
     },
   ];
 

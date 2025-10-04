@@ -24,7 +24,7 @@ export class TablesService {
     return this.prisma.table.findUnique({ where: { id } });
   }
 
-  updateStatus(id: number, status: string) {
+  updateStatus(id: number, status: 'AVAILABLE' | 'OCCUPIED') {
     return this.prisma.table.update({ where: { id }, data: { status } });
   }
 
@@ -42,7 +42,7 @@ export class TablesService {
       tableNumber: table.tableNumber,
       qrCodeToken: table.qrCodeToken,
       url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/scan/${table.qrCodeToken}`,
-      capacity: table.capacity
+      capacity: table.capacity,
     };
 
     return qrData;

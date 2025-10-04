@@ -21,7 +21,10 @@ export class TablesController {
   }
 
   @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: 'AVAILABLE' | 'OCCUPIED' },
+  ) {
     return await this.svc.updateStatus(Number(id), body.status);
   }
 

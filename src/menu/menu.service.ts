@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FoodType } from '@prisma/client';
 
 @Injectable()
 export class MenuService {
@@ -33,7 +34,7 @@ export class MenuService {
     name: string;
     price: number;
     description?: string;
-    foodtype?: string;
+    foodtype: FoodType;
   }) {
     return this.prisma.menuItem.create({ data });
   }
@@ -44,6 +45,7 @@ export class MenuService {
       name: string;
       price: number;
       description?: string;
+      foodtype: FoodType;
       isAvailable?: boolean;
     }>,
   ) {
@@ -54,7 +56,7 @@ export class MenuService {
   remove(id: number) {
     return this.prisma.menuItem.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -67,7 +69,7 @@ export class MenuService {
   restore(id: number) {
     return this.prisma.menuItem.update({
       where: { id },
-      data: { deletedAt: null }
+      data: { deletedAt: null },
     });
   }
 
@@ -75,7 +77,7 @@ export class MenuService {
   getDeleted() {
     return this.prisma.menuItem.findMany({
       where: { deletedAt: { not: null } },
-      orderBy: { deletedAt: 'desc' }
+      orderBy: { deletedAt: 'desc' },
     });
   }
 }

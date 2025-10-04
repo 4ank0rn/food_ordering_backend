@@ -19,12 +19,17 @@ model User {
 model Table {
   id          Int      @id @default(autoincrement())
   tableNumber Int      @unique
-  status      String?
+  status      TableStatus  @default(AVAILABLE)
   capacity    Int
   qrCodeToken String   @unique // token encoded into QR which creates session
   sessions    Session[]
   orders      Order[]
   bills       Bill[]
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
 }
 
 model Session {
@@ -43,18 +48,18 @@ model MenuItem {
   id          Int      @id @default(autoincrement())
   name        String
   price       Float
-  foodtype    menuType 
+  foodtype    FoodType
   description String?
   isAvailable Boolean  @default(true)
   deletedAt   DateTime? // soft delete field
   orderItems  OrderItem[]
 }
 
-enum menuType {
+enum FoodType {
   RICE
-  NOODLES
-  DRINKS
-  DESSERTS
+  NOODLE
+  DESSERT
+  DRINK
 }
 
 model Order {

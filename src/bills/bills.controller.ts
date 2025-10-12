@@ -10,6 +10,11 @@ export class BillsController {
     return await this.svc.createForTable(body.tableId);
   }
 
+  @Get()
+  async getAll() {
+    return await this.svc.getAll();
+  }
+
   @Get(':id')
   async get(@Param('id') id: string) {
     return await this.svc.get(Number(id));

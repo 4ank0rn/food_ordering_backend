@@ -7,7 +7,7 @@ export class SessionsController {
 
   @Post()
   async create(@Body() body: { qrCodeToken: string; meta?: any }) {
-    return await this.svc.createFromQr(body.qrCodeToken, body.meta);
+    return await this.svc.getOrCreateFromQr(body.qrCodeToken, body.meta);
   }
 
   @Get(':id/orders')
@@ -18,6 +18,17 @@ export class SessionsController {
   @Delete(':id')
   async softDelete(@Param('id') id: string) {
     return await this.svc.softDelete(id);
+  }
+
+  @Post(':id/checkout')
+  async checkout(@Param('id') id: string) {
+    return await this.svc.checkout(id);
+  }
+
+  @Get()
+  async findAll(@Query('includeDeleted') includeDeleted?: string) {
+    const include = includeDeleted === 'true';
+    return await this.svc.findAll(include);
   }
 
 }

@@ -7,8 +7,14 @@ import {
   Patch,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { MenuService } from './menu.service';
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic', 'image/heif'];
 
 @Controller('menu')
 export class MenuController {
@@ -35,9 +41,34 @@ export class MenuController {
     return await this.svc.create(body);
   }
 
+  @Post('with-image')
+  @UseInterceptors(FileInterceptor('image'))
+  async createWithImage(
+    @Body() body: any,
+    @UploadedFile() file?: Express.Multer.File
+  ) {
+    if (file && !ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException('Unsupported image type');
+    }
+    return await this.svc.createWithImage(body, file);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: string, @Body() body: any) {
     return await this.svc.update(Number(id), body);
+  }
+
+  @Patch(':id/with-image')
+  @UseInterceptors(FileInterceptor('image'))
+  async updateWithImage(
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFile() file?: Express.Multer.File
+  ) {
+    if (file && !ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException('Unsupported image type');
+    }
+    return await this.svc.updateWithImage(Number(id), body, file);
   }
 
   @Delete(':id')

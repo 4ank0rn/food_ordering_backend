@@ -10,6 +10,11 @@ export class OrdersController {
     return await this.svc.create(body);
   }
 
+  @Get()
+  async getAll() {
+    return await this.svc.getAll();
+  }
+
   @Get('queue')
   async getQueue() {
     return await this.svc.getQueue();

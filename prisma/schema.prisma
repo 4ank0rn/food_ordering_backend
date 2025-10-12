@@ -9,11 +9,21 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String?  // only for staff accounts; null for customers
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  password   String?  // only for staff accounts; null for oauth users
+  userType   UserType? @default(STAFF)
+  googleId   String?   // for OAuth users
+  picture    String?   // profile picture URL from OAuth
+  isActive   Boolean?  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+}
+
+enum UserType {
+  STAFF      // Staff members with manual login
+  INTERNSHIP // Internship members with Google OAuth
 }
 
 model Table {
@@ -53,6 +63,8 @@ model MenuItem {
   isAvailable Boolean  @default(true)
   deletedAt   DateTime? // soft delete field
   orderItems  OrderItem[]
+  photoUrl    String?  // store secure_url
+  photoId     String?  // stroe public_id from Cloudinary
 }
 
 enum FoodType {

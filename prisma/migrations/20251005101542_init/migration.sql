@@ -1,4 +1,10 @@
 -- CreateEnum
+CREATE TYPE "public"."TableStatus" AS ENUM ('AVAILABLE', 'OCCUPIED');
+
+-- CreateEnum
+CREATE TYPE "public"."FoodType" AS ENUM ('RICE', 'NOODLE', 'DESSERT', 'DRINK');
+
+-- CreateEnum
 CREATE TYPE "public"."OrderStatus" AS ENUM ('PENDING', 'IN_PROGRESS', 'DONE', 'CANCELLED');
 
 -- CreateTable
@@ -16,7 +22,7 @@ CREATE TABLE "public"."User" (
 CREATE TABLE "public"."Table" (
     "id" SERIAL NOT NULL,
     "tableNumber" INTEGER NOT NULL,
-    "status" TEXT,
+    "status" "public"."TableStatus" NOT NULL DEFAULT 'AVAILABLE',
     "capacity" INTEGER NOT NULL,
     "qrCodeToken" TEXT NOT NULL,
 
@@ -29,6 +35,7 @@ CREATE TABLE "public"."Session" (
     "tableId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiresAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMP(3),
     "metaJson" JSONB,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
@@ -39,9 +46,10 @@ CREATE TABLE "public"."MenuItem" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
-    "foodtype" TEXT,
+    "foodtype" "public"."FoodType" NOT NULL,
     "description" TEXT,
     "isAvailable" BOOLEAN NOT NULL DEFAULT true,
+    "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
 );

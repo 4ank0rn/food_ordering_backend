@@ -5,12 +5,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
+import { BillsService } from '../bills/bills.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private sockets: SocketsGateway,
+    private billsService: BillsService,
   ) {}
 
   async create(dto: {
@@ -51,12 +53,31 @@ export class OrdersService {
       return o;
     });
 
+    // Automatically create or update bill for this order
+    try {
+      await this.billsService.createOrUpdateForOrder(order.id);
+    } catch (error) {
+      console.error('Failed to create/update bill for order:', error);
+      // Don't fail the order creation if bill creation fails
+    }
+
     // notify staff
     try {
       this.sockets.emitToStaff('order:created', order);
     } catch (e) {}
 
     return order;
+  }
+
+  async getAll() {
+    return this.prisma.order.findMany({
+      include: {
+        orderItems: { include: { menuItem: true } },
+        session: true,
+        table: true,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
   }
 
   async getQueue() {

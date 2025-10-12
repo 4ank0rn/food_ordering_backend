@@ -17,8 +17,59 @@ export class UsersService {
         name: createUserDto.name,
         email: createUserDto.email,
         password: hashed,
+        userType: 'STAFF',
       },
     });
+  }
+
+  async createInternshipUser(email: string) {
+    return this.prisma.user.create({
+      data: {
+        name: email.split('@')[0], // Use email prefix as temporary name
+        email: email,
+        password: null,
+        userType: 'INTERNSHIP',
+        isActive: true,
+      },
+    });
+  }
+
+  async findOrCreateGoogleUser(googleData: {
+    googleId: string;
+    email: string;
+    name: string;
+    picture?: string;
+  }) {
+    // First check if user exists by email
+    let user = await this.prisma.user.findUnique({
+      where: { email: googleData.email }
+    });
+
+    if (user) {
+      // Update with Google data if user exists
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleId: googleData.googleId,
+          picture: googleData.picture,
+          name: googleData.name,
+        },
+      });
+    } else {
+      // Create new user if doesn't exist (should only happen if email was pre-approved)
+      user = await this.prisma.user.create({
+        data: {
+          name: googleData.name,
+          email: googleData.email,
+          googleId: googleData.googleId,
+          picture: googleData.picture,
+          userType: 'INTERNSHIP',
+          password: null,
+        },
+      });
+    }
+
+    return user;
   }
 
   findAll() {

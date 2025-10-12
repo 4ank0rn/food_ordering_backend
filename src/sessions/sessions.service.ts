@@ -5,15 +5,62 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SessionsService {
   constructor(private prisma: PrismaService) {}
 
-  async createFromQr(qrCodeToken: string, meta?: any) {
+  async getOrCreateFromQr(qrCodeToken: string, meta?: any) {
     const table = await this.prisma.table.findUnique({
       where: { qrCodeToken },
     });
     if (!table) throw new NotFoundException('Table not found');
+
+    // Check if there's already an active session for this table
+    const existingSession = await this.prisma.session.findFirst({
+      where: {
+        tableId: table.id,
+        deletedAt: null // Only active sessions
+      },
+      orderBy: { createdAt: 'desc' } // Get the most recent session
+    });
+
+    // If there's an active session, check if it's still valid (within 6 hours)
+    if (existingSession) {
+      const now = new Date();
+      const sessionAge = now.getTime() - existingSession.createdAt.getTime();
+      const sixHoursInMs = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+
+      // If session is older than 6 hours, close it and create a new one
+      if (sessionAge > sixHoursInMs) {
+        await this.prisma.session.update({
+          where: { id: existingSession.id },
+          data: { deletedAt: now }
+        });
+
+        // Create a new session
+        const newSession = await this.prisma.session.create({
+          data: { tableId: table.id, metaJson: meta ?? {} },
+        });
+        return {
+          ...newSession,
+          isNewSession: true,
+          message: 'Previous session expired. New session created.'
+        };
+      }
+
+      // Session is still valid, return it
+      return {
+        ...existingSession,
+        isNewSession: false,
+        message: 'Joined existing table session.'
+      };
+    }
+
+    // If no active session exists, create a new one
     const session = await this.prisma.session.create({
       data: { tableId: table.id, metaJson: meta ?? {} },
     });
-    return session;
+    return {
+      ...session,
+      isNewSession: true,
+      message: 'New session created.'
+    };
   }
 
   getOrders(sessionId: string) {
@@ -95,5 +142,42 @@ export class SessionsService {
       where,
       include: { table: true }
     });
+  }
+
+  // Checkout session - soft delete and return total amount
+  async checkout(sessionId: string) {
+    // First, get all orders for this session to calculate total
+    const orders = await this.prisma.order.findMany({
+      where: {
+        sessionId,
+        session: { deletedAt: null } // Only active sessions
+      },
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true
+          }
+        }
+      }
+    });
+
+    // Calculate total amount
+    const totalAmount = orders.reduce((total, order) => {
+      return total + order.orderItems.reduce((orderTotal, item) => {
+        return orderTotal + (item.menuItem.price * item.quantity);
+      }, 0);
+    }, 0);
+
+    // Soft delete the session (checkout)
+    const closedSession = await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { deletedAt: new Date() }
+    });
+
+    return {
+      session: closedSession,
+      orders,
+      totalAmount
+    };
   }
 }

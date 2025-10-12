@@ -13,6 +13,12 @@ export class UsersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('internship')
+  async createInternship(@Body() body: { email: string }) {
+    return await this.svc.createInternshipUser(body.email);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get()
   async list() {
     return await this.svc.findAll();

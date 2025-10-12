@@ -34,19 +34,26 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
   async googleAuthRedirect(@Req() req: any, @Res() res: any) {
-    const user = await this.svc.googleLogin(req.user);
+    try {
+      const user = await this.svc.googleLogin(req.user);
 
-    // Set HTTP-only cookie for security
-    res.cookie('admin_token', user.access_token, {
-      httpOnly: true, // Prevents XSS attacks
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'lax', // CSRF protection
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
+      // Set HTTP-only cookie for security
+      res.cookie('admin_token', user.access_token, {
+        httpOnly: true, // Prevents XSS attacks
+        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        sameSite: 'lax', // CSRF protection
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      });
 
-    // Redirect to admin frontend (port 5174) without token in URL
-    const adminFrontendUrl = 'http://localhost:5174';
-    res.redirect(`${adminFrontendUrl}/`);
+      // Redirect to admin frontend (port 5174) without token in URL
+      const adminFrontendUrl = 'http://localhost:5174';
+      res.redirect(`${adminFrontendUrl}/`);
+    } catch (error) {
+      // If login fails (e.g., user not in staff list), redirect to login with error
+      const adminFrontendUrl = 'http://localhost:5174';
+      const errorMessage = encodeURIComponent('Access denied. You are not authorized as staff. Please contact admin.');
+      res.redirect(`${adminFrontendUrl}/login?error=${errorMessage}`);
+    }
   }
 
   @Post('logout')

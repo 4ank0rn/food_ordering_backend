@@ -45,7 +45,7 @@ export class AuthService {
     const user = await this.users.findOrCreateGoogleUser({
       googleId: googleUser.id || email, // Use Google ID or email as fallback
       email: email,
-      name: `${firstName} ${lastName}`,
+      name: lastName ? `${firstName} ${lastName}` : firstName || email.split('@')[0],
       picture: picture,
     });
 

@@ -1,12 +1,17 @@
-import { Body, Controller, Post, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Req, Res, Request, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/create-auth.dto';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
-import type { Request, Response } from 'express';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { UsersService } from '../users/users.service';
+import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private svc: AuthService) {}
+  constructor(
+    private svc: AuthService,
+    private usersService: UsersService,
+  ) {}
 
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
@@ -61,5 +66,24 @@ export class AuthController {
     // Clear the authentication cookie
     response.clearCookie('admin_token');
     return { message: 'Logged out successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  async getProfile(@Request() req: any) {
+    const userId = req.user.id;
+    const user = await this.usersService.findOne(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      userType: user.userType,
+      picture: user.picture,
+    };
   }
 }

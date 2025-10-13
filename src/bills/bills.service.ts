@@ -4,10 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SocketsGateway } from '../sockets/sockets.gateway';
 
 @Injectable()
 export class BillsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private sockets: SocketsGateway
+  ) {}
 
   async createForTable(tableId: number) {
     const orders = await this.prisma.order.findMany({
@@ -74,6 +78,16 @@ export class BillsService {
           data: { billId: existingBill.id },
         });
 
+        // Emit bill updated event
+        try {
+          this.sockets.emitToStaff('bill_updated', updatedBill);
+          this.sockets.emitToTable(order.tableId, 'bill_updated', {
+            billId: updatedBill.id,
+            totalAmount: updatedBill.totalAmount,
+            message: 'Your bill has been updated.'
+          });
+        } catch (e) {}
+
         return updatedBill;
       } else {
         // Create new bill
@@ -89,6 +103,11 @@ export class BillsService {
           where: { id: orderId },
           data: { billId: newBill.id },
         });
+
+        // Emit new bill created event
+        try {
+          this.sockets.emitBillCreated(newBill);
+        } catch (e) {}
 
         return newBill;
       }
@@ -147,6 +166,11 @@ export class BillsService {
           data: { deletedAt: new Date() }
         });
       }
+
+      // Emit bill paid event
+      try {
+        this.sockets.emitBillPaid(paidBill);
+      } catch (e) {}
 
       return paidBill;
     });

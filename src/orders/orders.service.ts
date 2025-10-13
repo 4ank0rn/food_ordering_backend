@@ -61,9 +61,9 @@ export class OrdersService {
       // Don't fail the order creation if bill creation fails
     }
 
-    // notify staff
+    // notify staff and customer
     try {
-      this.sockets.emitToStaff('order:created', order);
+      this.sockets.emitOrderCreated(order);
     } catch (e) {}
 
     return order;
@@ -106,12 +106,7 @@ export class OrdersService {
     });
 
     try {
-      this.sockets.emitToStaff('order:status_updated', updated);
-      this.sockets.emitToTable(
-        updated.tableId,
-        'order:status_updated',
-        updated,
-      );
+      this.sockets.emitOrderStatusUpdated(updated);
     } catch (e) {}
 
     return updated;

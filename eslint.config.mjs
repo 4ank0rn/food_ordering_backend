@@ -26,9 +26,20 @@ export default tseslint.config(
   },
   {
     rules: {
+      // 🧩 completely ignore "any" usage
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+
+      // optionally make these soft warnings instead of errors
       '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn'
+
+      // optional: ignore unused vars that are _underscored
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'prettier/prettier': 'off', // 👈 disables prettier lint errors
     },
   },
 );

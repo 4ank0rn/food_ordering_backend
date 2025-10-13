@@ -24,6 +24,21 @@ export class TablesService {
     return this.prisma.table.findUnique({ where: { id } });
   }
 
+  update(id: number, data: { tableNumber?: number; capacity?: number }) {
+    return this.prisma.table.update({
+      where: { id },
+      data: {
+        ...(data.tableNumber !== undefined && { tableNumber: data.tableNumber }),
+        ...(data.capacity !== undefined && { capacity: data.capacity }),
+      }
+    });
+  }
+
+  async remove(id: number) {
+    await this.prisma.table.delete({ where: { id } });
+    return { message: 'Table deleted successfully' };
+  }
+
   updateStatus(id: number, status: 'AVAILABLE' | 'OCCUPIED') {
     return this.prisma.table.update({ where: { id }, data: { status } });
   }

@@ -21,6 +21,9 @@
     "seed": "node seed.js",
     "test:api": "node test-api.js"
   },
+    "prisma": {
+    "seed": "node seed.js"
+  },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

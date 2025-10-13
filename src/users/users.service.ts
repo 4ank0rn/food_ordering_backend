@@ -90,4 +90,9 @@ export class UsersService {
       data: updateData,
     });
   }
+
+  async deleteUser(id: number) {
+    await this.prisma.user.delete({ where: { id } });
+    return { message: 'User deleted successfully' };
+  }
 }

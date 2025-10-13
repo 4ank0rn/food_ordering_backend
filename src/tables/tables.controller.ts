@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Delete } from '@nestjs/common';
 import { TablesService } from './tables.service';
 
 @Controller('tables')
@@ -26,6 +26,19 @@ export class TablesController {
     @Body() body: { status: 'AVAILABLE' | 'OCCUPIED' },
   ) {
     return await this.svc.updateStatus(Number(id), body.status);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: { tableNumber?: number; capacity?: number },
+  ) {
+    return await this.svc.update(Number(id), body);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return await this.svc.remove(Number(id));
   }
 
   @Get(':id/qr')

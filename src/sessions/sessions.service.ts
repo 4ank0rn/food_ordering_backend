@@ -37,16 +37,20 @@ export class SessionsService {
         const newSession = await this.prisma.session.create({
           data: { tableId: table.id, metaJson: meta ?? {} },
         });
+        const expiresAt = new Date(newSession.createdAt.getTime() + sixHoursInMs);
         return {
           ...newSession,
+          expiresAt: expiresAt.toISOString(),
           isNewSession: true,
           message: 'Previous session expired. New session created.'
         };
       }
 
       // Session is still valid, return it
+      const expiresAt = new Date(existingSession.createdAt.getTime() + sixHoursInMs);
       return {
         ...existingSession,
+        expiresAt: expiresAt.toISOString(),
         isNewSession: false,
         message: 'Joined existing table session.'
       };
@@ -56,8 +60,11 @@ export class SessionsService {
     const session = await this.prisma.session.create({
       data: { tableId: table.id, metaJson: meta ?? {} },
     });
+    const sixHoursInMs = 6 * 60 * 60 * 1000;
+    const expiresAt = new Date(session.createdAt.getTime() + sixHoursInMs);
     return {
       ...session,
+      expiresAt: expiresAt.toISOString(),
       isNewSession: true,
       message: 'New session created.'
     };
@@ -142,6 +149,51 @@ export class SessionsService {
       where,
       include: { table: true }
     });
+  }
+
+  // Validate session - check if session exists and is not expired
+  async validateSession(sessionId: string) {
+    const session = await this.prisma.session.findFirst({
+      where: {
+        id: sessionId,
+        deletedAt: null // Only active sessions
+      }
+    });
+
+    if (!session) {
+      return { isValid: false, message: 'Session not found or expired' };
+    }
+
+    // Check if session is older than 6 hours
+    const now = new Date();
+    const sessionAge = now.getTime() - session.createdAt.getTime();
+    const sixHoursInMs = 6 * 60 * 60 * 1000;
+
+    if (sessionAge > sixHoursInMs) {
+      // Mark session as expired
+      await this.prisma.session.update({
+        where: { id: sessionId },
+        data: { deletedAt: now }
+      });
+      return { isValid: false, message: 'Session expired' };
+    }
+
+    const expiresAt = new Date(session.createdAt.getTime() + sixHoursInMs);
+
+    // Get table information with the session
+    const table = await this.prisma.table.findUnique({
+      where: { id: session.tableId }
+    });
+
+    return {
+      isValid: true,
+      session: {
+        ...session,
+        expiresAt: expiresAt.toISOString()
+      },
+      table: table,
+      message: 'Session is valid'
+    };
   }
 
   // Checkout session - soft delete and return total amount

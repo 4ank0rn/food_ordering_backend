@@ -25,6 +25,11 @@ export class SessionsController {
     return await this.svc.checkout(id);
   }
 
+  @Get(':id/validate')
+  async validateSession(@Param('id') id: string) {
+    return await this.svc.validateSession(id);
+  }
+
   @Get()
   async findAll(@Query('includeDeleted') includeDeleted?: string) {
     const include = includeDeleted === 'true';

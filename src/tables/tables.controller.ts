@@ -45,4 +45,22 @@ export class TablesController {
   async getQRCode(@Param('id') id: string) {
     return await this.svc.getQRCode(Number(id));
   }
+
+  @Patch(':id/status/toggle')
+  async toggleStatusManually(
+    @Param('id') id: string,
+    @Body() body: { status: 'AVAILABLE' | 'OCCUPIED' },
+  ) {
+    return await this.svc.toggleStatusManually(Number(id), body.status);
+  }
+
+  @Get(':id/status')
+  async getTableWithStatus(@Param('id') id: string) {
+    return await this.svc.getTableWithStatus(Number(id));
+  }
+
+  @Post(':id/cleanup-sessions')
+  async cleanupSessionsForTable(@Param('id') id: string) {
+    return await this.svc.cleanupSessionsForTable(Number(id));
+  }
 }

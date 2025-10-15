@@ -227,6 +227,57 @@ export class SocketsGateway implements OnGatewayConnection, OnGatewayDisconnect 
     return { staff, customers, tables };
   }
 
+  // Table status management events
+  emitTableStatusChanged(tableId: number, status: 'AVAILABLE' | 'OCCUPIED', reason?: string) {
+    if (this.server) {
+      const payload = {
+        tableId,
+        status,
+        reason,
+        timestamp: Date.now()
+      };
+
+      // Notify staff about table status change
+      this.emitToStaff('table_status_changed', payload);
+
+      // Notify customers at the table
+      this.emitToTable(tableId, 'table_status_changed', payload);
+
+      this.logger.log(`Table ${tableId} status changed to ${status}${reason ? ` (${reason})` : ''}`);
+    }
+  }
+
+  emitSessionStarted(session: any) {
+    if (this.server) {
+      const payload = {
+        sessionId: session.id,
+        tableId: session.tableId,
+        timestamp: Date.now()
+      };
+
+      this.emitToStaff('session_started', payload);
+      this.emitToTable(session.tableId, 'session_started', payload);
+
+      this.logger.log(`Session started for table ${session.tableId}: ${session.id}`);
+    }
+  }
+
+  emitSessionEnded(session: any, reason?: string) {
+    if (this.server) {
+      const payload = {
+        sessionId: session.id,
+        tableId: session.tableId,
+        reason,
+        timestamp: Date.now()
+      };
+
+      this.emitToStaff('session_ended', payload);
+      this.emitToTable(session.tableId, 'session_ended', payload);
+
+      this.logger.log(`Session ended for table ${session.tableId}: ${session.id}${reason ? ` (${reason})` : ''}`);
+    }
+  }
+
   // Specific business logic events
   emitOrderCreated(order: any) {
     this.emitToStaff('order_created', order);

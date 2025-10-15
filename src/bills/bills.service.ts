@@ -2,15 +2,20 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SocketsGateway } from '../sockets/sockets.gateway';
+import { TablesService } from '../tables/tables.service';
 
 @Injectable()
 export class BillsService {
   constructor(
     private prisma: PrismaService,
-    private sockets: SocketsGateway
+    private sockets: SocketsGateway,
+    @Inject(forwardRef(() => TablesService))
+    private tablesService: TablesService
   ) {}
 
   async createForTable(tableId: number) {
@@ -165,6 +170,28 @@ export class BillsService {
           },
           data: { deletedAt: new Date() }
         });
+
+        // Emit session ended events for each closed session
+        for (const session of activeSessions) {
+          try {
+            this.sockets.emitSessionEnded(session, 'Bill paid and session closed');
+          } catch (e) {}
+        }
+      }
+
+      // After closing sessions within transaction, update table status to AVAILABLE
+      // Since we're in a transaction and just closed all sessions, we can safely set to AVAILABLE
+      const table = await tx.table.findUnique({ where: { id: b.tableId } });
+      if (table && table.status === 'OCCUPIED') {
+        await tx.table.update({
+          where: { id: b.tableId },
+          data: { status: 'AVAILABLE' }
+        });
+
+        // Emit table status change event
+        try {
+          this.sockets.emitTableStatusChanged(b.tableId, 'AVAILABLE', 'Bill paid and sessions closed');
+        } catch (e) {}
       }
 
       // Emit bill paid event

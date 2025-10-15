@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TablesService } from '../tables/tables.service';
+import { SocketsGateway } from '../sockets/sockets.gateway';
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => TablesService))
+    private tablesService: TablesService,
+    private sockets: SocketsGateway
+  ) {}
 
   async getOrCreateFromQr(qrCodeToken: string, meta?: any) {
     const table = await this.prisma.table.findUnique({
@@ -37,6 +44,15 @@ export class SessionsService {
         const newSession = await this.prisma.session.create({
           data: { tableId: table.id, metaJson: meta ?? {} },
         });
+
+        // Set table status to OCCUPIED
+        try {
+          await this.tablesService.setOccupiedOnSessionStart(table.id);
+          this.sockets.emitSessionStarted(newSession);
+        } catch (e) {
+          // Continue even if table status update fails
+        }
+
         const expiresAt = new Date(newSession.createdAt.getTime() + sixHoursInMs);
         return {
           ...newSession,
@@ -46,7 +62,13 @@ export class SessionsService {
         };
       }
 
-      // Session is still valid, return it
+      // Session is still valid, but ensure table status is OCCUPIED
+      try {
+        await this.tablesService.setOccupiedOnSessionStart(table.id);
+      } catch (e) {
+        // Continue even if table status update fails
+      }
+
       const expiresAt = new Date(existingSession.createdAt.getTime() + sixHoursInMs);
       return {
         ...existingSession,
@@ -60,6 +82,15 @@ export class SessionsService {
     const session = await this.prisma.session.create({
       data: { tableId: table.id, metaJson: meta ?? {} },
     });
+
+    // Set table status to OCCUPIED
+    try {
+      await this.tablesService.setOccupiedOnSessionStart(table.id);
+      this.sockets.emitSessionStarted(session);
+    } catch (e) {
+      // Continue even if table status update fails
+    }
+
     const sixHoursInMs = 6 * 60 * 60 * 1000;
     const expiresAt = new Date(session.createdAt.getTime() + sixHoursInMs);
     return {
@@ -92,10 +123,32 @@ export class SessionsService {
 
   // Soft delete session
   async softDelete(sessionId: string) {
-    return this.prisma.session.update({
+    const session = await this.prisma.session.findUnique({
+      where: { id: sessionId }
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const updatedSession = await this.prisma.session.update({
       where: { id: sessionId },
       data: { deletedAt: new Date() }
     });
+
+    // Emit session ended event
+    try {
+      this.sockets.emitSessionEnded(updatedSession, 'Session manually closed');
+    } catch (e) {}
+
+    // Check if table should be set to AVAILABLE
+    try {
+      await this.tablesService.setAvailableOnBillPaid(session.tableId);
+    } catch (e) {
+      // Continue even if table status update fails
+    }
+
+    return updatedSession;
   }
 
   // Hard delete session (permanent)
@@ -171,10 +224,17 @@ export class SessionsService {
 
     if (sessionAge > sixHoursInMs) {
       // Mark session as expired
-      await this.prisma.session.update({
+      const expiredSession = await this.prisma.session.update({
         where: { id: sessionId },
         data: { deletedAt: now }
       });
+
+      // Emit session ended event
+      try {
+        this.sockets.emitSessionEnded(expiredSession, 'Session expired');
+        await this.tablesService.setAvailableOnBillPaid(session.tableId);
+      } catch (e) {}
+
       return { isValid: false, message: 'Session expired' };
     }
 
@@ -225,6 +285,11 @@ export class SessionsService {
       where: { id: sessionId },
       data: { deletedAt: new Date() }
     });
+
+    // Emit session ended event
+    try {
+      this.sockets.emitSessionEnded(closedSession, 'Session checked out');
+    } catch (e) {}
 
     return {
       session: closedSession,

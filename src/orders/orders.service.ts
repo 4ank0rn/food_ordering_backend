@@ -74,7 +74,11 @@ export class OrdersService {
       include: {
         orderItems: { include: { menuItem: true } },
         session: true,
-        table: true,
+        table: {
+          select: {
+            tableNumber: true,
+          },
+        },
       },
       orderBy: [{ createdAt: 'desc' }],
     });

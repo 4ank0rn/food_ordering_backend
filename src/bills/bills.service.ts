@@ -15,7 +15,7 @@ export class BillsService {
     private prisma: PrismaService,
     private sockets: SocketsGateway,
     @Inject(forwardRef(() => TablesService))
-    private tablesService: TablesService
+    private tablesService: TablesService,
   ) {}
 
   async createForTable(tableId: number) {
@@ -65,7 +65,7 @@ export class BillsService {
     return this.prisma.$transaction(async (tx) => {
       // Calculate the order total
       const orderTotal = order.orderItems.reduce((total, item) => {
-        return total + (item.quantity * item.menuItem.price);
+        return total + item.quantity * item.menuItem.price;
       }, 0);
 
       if (existingBill) {
@@ -89,7 +89,7 @@ export class BillsService {
           this.sockets.emitToTable(order.tableId, 'bill_updated', {
             billId: updatedBill.id,
             totalAmount: updatedBill.totalAmount,
-            message: 'Your bill has been updated.'
+            message: 'Your bill has been updated.',
           });
         } catch (e) {}
 
@@ -122,7 +122,21 @@ export class BillsService {
   async getAll() {
     return this.prisma.bill.findMany({
       include: {
-        orders: { include: { orderItems: { include: { menuItem: true } } } },
+        orders: {
+          include: {
+            orderItems: {
+              include: {
+                menuItem: true,
+              },
+            },
+          },
+        },
+        table: {
+          // <-- include ตาราง table
+          select: {
+            tableNumber: true, // <-- เอาเฉพาะ tableNumber
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -140,7 +154,7 @@ export class BillsService {
   async pay(id: number) {
     const b = await this.prisma.bill.findUnique({
       where: { id },
-      include: { orders: true }
+      include: { orders: true },
     });
     if (!b) throw new NotFoundException('Bill not found');
     if (b.isPaid) throw new BadRequestException('Already paid');
@@ -157,8 +171,8 @@ export class BillsService {
       const activeSessions = await tx.session.findMany({
         where: {
           tableId: b.tableId,
-          deletedAt: null // Only active sessions
-        }
+          deletedAt: null, // Only active sessions
+        },
       });
 
       // Close all active sessions for this table
@@ -166,15 +180,18 @@ export class BillsService {
         await tx.session.updateMany({
           where: {
             tableId: b.tableId,
-            deletedAt: null
+            deletedAt: null,
           },
-          data: { deletedAt: new Date() }
+          data: { deletedAt: new Date() },
         });
 
         // Emit session ended events for each closed session
         for (const session of activeSessions) {
           try {
-            this.sockets.emitSessionEnded(session, 'Bill paid and session closed');
+            this.sockets.emitSessionEnded(
+              session,
+              'Bill paid and session closed',
+            );
           } catch (e) {}
         }
       }
@@ -185,12 +202,16 @@ export class BillsService {
       if (table && table.status === 'OCCUPIED') {
         await tx.table.update({
           where: { id: b.tableId },
-          data: { status: 'AVAILABLE' }
+          data: { status: 'AVAILABLE' },
         });
 
         // Emit table status change event
         try {
-          this.sockets.emitTableStatusChanged(b.tableId, 'AVAILABLE', 'Bill paid and sessions closed');
+          this.sockets.emitTableStatusChanged(
+            b.tableId,
+            'AVAILABLE',
+            'Bill paid and sessions closed',
+          );
         } catch (e) {}
       }
 

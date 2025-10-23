@@ -43,7 +43,7 @@ RUN adduser --system --uid 1001 nestjs
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
-COPY package*.json ./
+COPY package*.json seed.js ./
 
 # Set correct permissions
 RUN chown -R nestjs:nodejs /app

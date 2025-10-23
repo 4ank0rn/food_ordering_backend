@@ -12,7 +12,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000"],
+    origin: [`${process.env.FRONTEND_URL}`, `${process.env.ADMIN_URL}`, `${process.env.BACKEND_URL}`],
     credentials: true
   },
   transports: ['websocket', 'polling']

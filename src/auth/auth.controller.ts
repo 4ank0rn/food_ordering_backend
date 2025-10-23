@@ -51,11 +51,11 @@ export class AuthController {
       });
 
       // Redirect to admin frontend (port 5174) without token in URL
-      const adminFrontendUrl = 'http://localhost:5174';
+      const adminFrontendUrl = `${process.env.ADMIN_URL}`;
       res.redirect(`${adminFrontendUrl}/`);
     } catch (error) {
       // If login fails (e.g., user not in staff list), redirect to login with error
-      const adminFrontendUrl = 'http://localhost:5174';
+      const adminFrontendUrl = `${process.env.ADMIN_URL}`;
       const errorMessage = encodeURIComponent('Access denied. You are not authorized as staff. Please contact admin.');
       res.redirect(`${adminFrontendUrl}/login?error=${errorMessage}`);
     }

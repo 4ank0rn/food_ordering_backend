@@ -11,7 +11,7 @@ async function bootstrap() {
 
   // Enable CORS with credentials support
   app.enableCors({
-    origin: [`${process.env.FRONTEND_URL}`, `${process.env.ADMIN_URL}`] // Your frontends
+    origin: [`${process.env.FRONTEND_URL}`, `${process.env.ADMIN_URL}`], // Your frontends
     credentials: true, // Allow cookies to be sent
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

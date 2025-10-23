@@ -18,6 +18,27 @@ services:
       - food_ordering_network
     restart: unless-stopped
 
+  backend:
+    image: nathapatt/ordering-food-backend
+    container_name: food_ordering_backend
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_APP_USER}:${POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    ports:
+      - '${PORT}:3000'
+    depends_on:
+      - db
+    networks:
+      - food_ordering_network
+    restart: unless-stopped
+
 volumes:
   db_data:
 networks:

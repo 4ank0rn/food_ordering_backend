@@ -1,38 +1,45 @@
-# Food Ordering Backend API
+# 🍽️ Food Ordering Backend API
 
-A NestJS backend API for a restaurant food ordering system with QR code-based table sessions, real-time order management, and comprehensive menu management.
+A comprehensive NestJS backend API for a restaurant food ordering system with QR code-based table sessions, real-time order management, Google OAuth authentication, and Cloudinary image upload integration.
 
-## Features
+## ✨ Features
 
-- 🍽️ **Menu Management** - CRUD operations with soft delete support
-- 📱 **QR Code Sessions** - Table-based ordering system
+- 🍽️ **Menu Management** - CRUD operations with image upload and soft delete
+- 📱 **QR Code Sessions** - Table-based ordering system with session management
 - 📋 **Order Management** - Real-time order tracking and status updates
 - 💰 **Billing System** - Automated bill generation and payment tracking
-- 🔒 **Authentication** - JWT-based staff authentication
-- 🏪 **Table Management** - Dynamic table configuration
-- 🗑️ **Soft Delete** - Reversible deletion for menu items and sessions
+- 🔒 **Authentication** - JWT-based staff authentication with Google OAuth
+- 🏪 **Table Management** - Dynamic table configuration and QR generation
+- 🖼️ **Image Upload** - Cloudinary integration for menu item images
+- 🔌 **Real-time** - WebSocket gateway for live updates
+- 🗑️ **Soft Delete** - Reversible deletion for data integrity
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-- **Framework**: NestJS
+- **Framework**: NestJS with TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT
-- **Real-time**: WebSocket Gateway
-- **API Documentation**: RESTful endpoints
+- **Authentication**: JWT tokens with HTTP-only cookies
+- **OAuth**: Google OAuth 2.0 integration
+- **Real-time**: Socket.io WebSocket gateway
+- **File Upload**: Cloudinary integration
+- **Validation**: class-validator and class-transformer
+- **API Documentation**: RESTful endpoints with proper error handling
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - PostgreSQL database
-- npm or pnpm
+- npm/pnpm
+- Cloudinary account (for image uploads)
+- Google OAuth credentials (optional)
 
 ### Installation
 
-1. **Clone and navigate to the project**
+1. **Navigate to the project**
    ```bash
-   cd food_ordering_backend
+   cd customer-ordering-backend/food_ordering_backend
    ```
 
 2. **Install dependencies**
@@ -44,7 +51,30 @@ A NestJS backend API for a restaurant food ordering system with QR code-based ta
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` file with your database credentials.
+
+   **Required Environment Variables:**
+   ```bash
+   # Database
+   DATABASE_URL="postgresql://username:password@localhost:5432/food_ordering"
+
+   # JWT
+   JWT_SECRET="your-super-secret-jwt-key"
+
+   # Google OAuth (optional)
+   GOOGLE_CLIENT_ID="your-google-client-id"
+   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+   GOOGLE_CALLBACK_URL="http://localhost:3000/auth/google/callback"
+
+   # Frontend URLs
+   FRONTEND_URL="http://localhost:5174"
+   ADMIN_URL="http://localhost:5176"
+   BACKEND_URL="http://localhost:3000"
+
+   # Cloudinary (for image uploads)
+   CLOUDINARY_CLOUD_NAME="your-cloud-name"
+   CLOUDINARY_API_KEY="your-api-key"
+   CLOUDINARY_API_SECRET="your-api-secret"
+   ```
 
 4. **Database Setup**
    ```bash
@@ -54,35 +84,60 @@ A NestJS backend API for a restaurant food ordering system with QR code-based ta
    # Generate Prisma client
    npx prisma generate
 
-   # (Optional) Seed database with sample data
-   npx prisma db seed
+   # Seed database with initial data
+   npm run seed
    ```
 
 5. **Start the server**
    ```bash
    # Development mode
-   pnpm run start:dev
+   npm run start:dev
 
    # Production mode
-   pnpm run start:prod
+   npm run start:prod
    ```
 
 The server will start on `http://localhost:3000`
 
-### Database Management
+## 📊 Database Seeding
+
+The seed script creates:
+- **10 tables** with QR code tokens
+- **Admin user** (admin@restaurant.com / admin123)
+- **Sample menu items** (optional)
 
 ```bash
-# View database in Prisma Studio
-npx prisma studio
-
-# Reset database (⚠️ This will delete all data)
-npx prisma db push --reset
-
-# Apply schema changes
-npx prisma db push
+npm run seed
 ```
 
-## API Endpoints
+## 🌐 API Endpoints
+
+### 🔐 Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST   | `/auth/login` | Staff login with email/password |
+| GET    | `/auth/google` | Google OAuth login |
+| GET    | `/auth/google/callback` | Google OAuth callback |
+| POST   | `/auth/logout` | Clear authentication cookies |
+
+**Login Example:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@restaurant.com",
+    "password": "admin123"
+  }'
+```
+
+### 👥 Users Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST   | `/users/staff` | Create staff account |
+| GET    | `/users` | Get all users |
+| GET    | `/users/:id` | Get specific user |
 
 ### 🏪 Tables Management
 
@@ -96,13 +151,17 @@ npx prisma db push
 
 **Example Usage:**
 ```bash
-# Get all tables
-curl -X GET http://localhost:3000/tables
-
 # Create a table
 curl -X POST http://localhost:3000/tables \
   -H "Content-Type: application/json" \
-  -d '{"tableNumber": 1, "capacity": 4}'
+  -d '{
+    "tableNumber": 1,
+    "capacity": 4,
+    "status": "AVAILABLE"
+  }'
+
+# Get QR code for table
+curl -X GET http://localhost:3000/tables/1/qr
 ```
 
 ### 📱 Sessions Management
@@ -110,6 +169,7 @@ curl -X POST http://localhost:3000/tables \
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST   | `/sessions` | Create session from QR code |
+| GET    | `/sessions/:id` | Get session details |
 | GET    | `/sessions/:id/orders` | Get orders for session |
 | DELETE | `/sessions/:id` | Soft delete session |
 
@@ -118,13 +178,9 @@ curl -X POST http://localhost:3000/tables \
 # Create session from QR code
 curl -X POST http://localhost:3000/sessions \
   -H "Content-Type: application/json" \
-  -d '{"qrCodeToken": "table-1-token-abc123"}'
-
-# Get orders for session
-curl -X GET http://localhost:3000/sessions/session-uuid/orders
-
-# Soft delete session
-curl -X DELETE http://localhost:3000/sessions/session-uuid
+  -d '{
+    "qrCodeToken": "table-1-token-abc123"
+  }'
 ```
 
 ### 🍽️ Menu Management
@@ -133,32 +189,18 @@ curl -X DELETE http://localhost:3000/sessions/session-uuid
 |--------|----------|-------------|------------------|
 | GET    | `/menu` | Get all menu items | `?onlyAvailable=true&includeDeleted=false` |
 | GET    | `/menu/:id` | Get specific menu item | - |
-| POST   | `/menu` | Create new menu item | - |
+| POST   | `/menu` | Create new menu item with image | - |
 | PATCH  | `/menu/:id` | Update menu item | - |
 | DELETE | `/menu/:id` | Soft delete menu item | - |
 
-**Example Usage:**
+**Create Menu Item with Image:**
 ```bash
-# Get available menu items only
-curl -X GET "http://localhost:3000/menu?onlyAvailable=true"
-
-# Create menu item
 curl -X POST http://localhost:3000/menu \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Pad Thai",
-    "price": 12.99,
-    "description": "Traditional Thai stir-fried noodles",
-    "foodtype": "Main Course"
-  }'
-
-# Update menu item
-curl -X PATCH http://localhost:3000/menu/1 \
-  -H "Content-Type: application/json" \
-  -d '{"price": 13.99, "isAvailable": true}'
-
-# Soft delete menu item
-curl -X DELETE http://localhost:3000/menu/1
+  -F "name=Pad Thai" \
+  -F "price=12.99" \
+  -F "description=Traditional Thai stir-fried noodles" \
+  -F "foodtype=Main Course" \
+  -F "image=@path/to/image.jpg"
 ```
 
 ### 📋 Orders Management
@@ -166,15 +208,14 @@ curl -X DELETE http://localhost:3000/menu/1
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST   | `/orders` | Create new order |
-| GET    | `/orders/queue` | Get order queue |
+| GET    | `/orders/queue` | Get order queue for staff |
 | GET    | `/orders/:id` | Get specific order |
 | PATCH  | `/orders/:id/status` | Update order status |
 
 **Order Status Values:** `PENDING` | `IN_PROGRESS` | `DONE` | `CANCELLED`
 
-**Example Usage:**
+**Create Order:**
 ```bash
-# Create order
 curl -X POST http://localhost:3000/orders \
   -H "Content-Type: application/json" \
   -d '{
@@ -188,14 +229,6 @@ curl -X POST http://localhost:3000/orders \
       }
     ]
   }'
-
-# Update order status
-curl -X PATCH http://localhost:3000/orders/1/status \
-  -H "Content-Type: application/json" \
-  -d '{"status": "IN_PROGRESS"}'
-
-# Get order queue
-curl -X GET http://localhost:3000/orders/queue
 ```
 
 ### 💰 Bills Management
@@ -206,44 +239,31 @@ curl -X GET http://localhost:3000/orders/queue
 | GET    | `/bills/:id` | Get specific bill |
 | PATCH  | `/bills/:id/pay` | Mark bill as paid |
 
-**Example Usage:**
-```bash
-# Create bill
-curl -X POST http://localhost:3000/bills \
-  -H "Content-Type: application/json" \
-  -d '{"tableId": 1}'
-
-# Mark bill as paid
-curl -X PATCH http://localhost:3000/bills/1/pay
-```
-
-### 🔐 Authentication
+### 🖼️ Image Upload
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST   | `/auth/login` | Staff login |
-| POST   | `/users/staff` | Create staff account |
-| GET    | `/users` | Get all users |
-| GET    | `/users/:id` | Get specific user |
+| POST   | `/upload/image` | Upload image to Cloudinary |
 
-**Example Usage:**
+**Upload Image:**
 ```bash
-# Staff login
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "staff@restaurant.com", "password": "password123"}'
-
-# Create staff account
-curl -X POST http://localhost:3000/users/staff \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "John Doe",
-    "email": "john@restaurant.com",
-    "password": "password123"
-  }'
+curl -X POST http://localhost:3000/upload/image \
+  -F "file=@path/to/image.jpg"
 ```
 
-## Data Models
+**Response:**
+```json
+{
+  "url": "https://res.cloudinary.com/...",
+  "publicId": "uploads/abc123",
+  "width": 800,
+  "height": 600,
+  "bytes": 102400,
+  "format": "jpg"
+}
+```
+
+## 📊 Data Models
 
 ### Menu Item
 ```typescript
@@ -253,8 +273,11 @@ curl -X POST http://localhost:3000/users/staff \
   price: number
   description?: string
   foodtype?: string // "Main Course" | "Noodle" | "Beverage" | "Dessert"
+  imageUrl?: string
   isAvailable: boolean
   deletedAt?: Date // Soft delete timestamp
+  createdAt: Date
+  updatedAt: Date
 }
 ```
 
@@ -283,86 +306,163 @@ curl -X POST http://localhost:3000/users/staff \
 }
 ```
 
-### Order Item
+### User (Staff)
 ```typescript
 {
   id: number
-  orderId: number
-  menuItemId: number
-  quantity: number
-  note?: string
+  email: string
+  name: string
+  role: "STAFF" | "ADMIN"
+  provider?: "LOCAL" | "GOOGLE"
+  createdAt: Date
+  updatedAt: Date
 }
 ```
 
-## QR Code Session Flow
+## 🔌 WebSocket Events
 
-1. **Customer scans QR code** at table
-2. **Frontend calls** `POST /sessions` with `qrCodeToken`
-3. **Backend creates session** linked to table
-4. **Customer browses menu** and places orders
-5. **Orders are linked** to the session
-6. **Multiple customers** can join same table session
-7. **Session can be deleted** to close table
+The API includes real-time WebSocket support:
 
-## Soft Delete Feature
+### **Client → Server Events**
+- **join_table** - Join table room for customer updates
+- **join_staff** - Join staff room for kitchen notifications
 
-Both menu items and sessions support soft delete:
+### **Server → Client Events**
+- **order_created** - New order notification to staff
+- **order_updated** - Order status change to customers
+- **table_updated** - Table status change
 
-- **Soft Delete**: Sets `deletedAt` timestamp, hides from normal queries
+**Example WebSocket Usage:**
+```javascript
+// Customer joining table room
+socket.emit('join_table', { tableId: 1 });
+
+// Staff joining staff room
+socket.emit('join_staff');
+
+// Listen for order updates
+socket.on('order_updated', (order) => {
+  console.log('Order status changed:', order);
+});
+```
+
+## 🗑️ Soft Delete Feature
+
+Menu items and sessions support soft delete for data integrity:
+
+- **Soft Delete**: Sets `deletedAt` timestamp
 - **Data Preserved**: Original data remains in database
-- **Filtered Queries**: Deleted items excluded from API responses
+- **Filtered Queries**: Deleted items excluded by default
 - **Restore Option**: Can be restored by setting `deletedAt` to `null`
 
-## WebSocket Events
+## 🔒 Security Features
 
-The API includes WebSocket support for real-time updates:
+- **JWT Authentication** with HTTP-only cookies
+- **CORS Configuration** for frontend domains
+- **Rate Limiting** (configurable)
+- **Input Validation** with class-validator
+- **SQL Injection Protection** via Prisma ORM
+- **XSS Protection** with proper sanitization
 
-- **join_table**: Join table room for order updates
-- **join_staff**: Join staff room for kitchen notifications
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Required |
-| `JWT_SECRET` | Secret key for JWT tokens | Required |
-| `PORT` | Server port | 3000 |
-
-## Development
+## 🧪 Development
 
 ```bash
 # Run tests
-pnpm run test
+npm run test
 
 # Run tests in watch mode
-pnpm run test:watch
+npm run test:watch
 
 # Run e2e tests
-pnpm run test:e2e
+npm run test:e2e
 
 # Format code
-pnpm run format
+npm run format
 
 # Lint code
-pnpm run lint
+npm run lint
+
+# Database management
+npx prisma studio          # View database in browser
+npx prisma db push --reset  # Reset database (⚠️ Deletes all data)
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
-├── auth/           # Authentication module
-├── bills/          # Bills management
-├── menu/           # Menu items CRUD
-├── orders/         # Order management
-├── prisma/         # Database service
-├── sessions/       # QR code sessions
-├── sockets/        # WebSocket gateway
-├── tables/         # Table management
-├── users/          # User management
-└── main.ts         # Application entry point
+├── auth/              # Authentication module
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── jwt-auth.guard.ts
+│   └── guards/        # OAuth guards
+├── bills/             # Bills management
+├── cloudinary/        # Cloudinary service
+├── menu/              # Menu items CRUD
+├── orders/            # Order management
+├── prisma/            # Database service
+├── sessions/          # QR code sessions
+├── sockets/           # WebSocket gateway
+├── tables/            # Table management
+├── upload/            # File upload handling
+├── users/             # User management
+└── main.ts            # Application entry point
 ```
 
-## License
+## 🌍 Environment Configuration
 
-This project is licensed under the MIT License.
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | ✅ | - |
+| `JWT_SECRET` | Secret key for JWT tokens | ✅ | - |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID | ❌ | - |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | ❌ | - |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | ✅ | - |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | ✅ | - |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | ✅ | - |
+| `FRONTEND_URL` | Customer frontend URL | ✅ | http://localhost:5174 |
+| `ADMIN_URL` | Staff frontend URL | ✅ | http://localhost:5176 |
+| `PORT` | Server port | ❌ | 3000 |
+
+## 🐳 Docker Support
+
+The project includes Docker support with multi-stage builds:
+
+```bash
+# Build image
+docker build -t food-ordering-backend .
+
+# Run with docker-compose
+docker-compose up -d
+```
+
+## 📄 License
+
+This project is part of a university full-stack development course (Group 12).
+
+---
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Error**
+   - Verify PostgreSQL is running
+   - Check DATABASE_URL format
+   - Ensure database exists
+
+2. **Prisma Client Issues**
+   - Run `npx prisma generate`
+   - Clear node_modules and reinstall
+
+3. **Image Upload Failures**
+   - Verify Cloudinary credentials
+   - Check file size limits (default: 10MB)
+   - Ensure allowed file types
+
+4. **Authentication Issues**
+   - Verify JWT_SECRET is set
+   - Check cookie settings for HTTPS
+   - Confirm Google OAuth URLs
+
+For more help, check the logs or create an issue in the project repository.
